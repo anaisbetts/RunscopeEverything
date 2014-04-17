@@ -9,9 +9,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import de.robv.android.xposed.*;
 
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.*;
 
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
@@ -22,8 +20,6 @@ public class XposedHook implements IXposedHookLoadPackage {
 
     @Override
     public void handleLoadPackage(LoadPackageParam lpparam) throws Throwable {
-
-        final Class<?> httpUrlConnection = findClass("java.net.HttpURLConnection", lpparam.classLoader);
         final Class<?> activity = findClass("android.app.Activity", lpparam.classLoader);
 
         XposedBridge.log("Initializing Runscope hook");
@@ -44,6 +40,7 @@ public class XposedHook implements IXposedHookLoadPackage {
         });
         */
 
+        final Class<?> httpUrlConnection = findClass("java.net.HttpURLConnection", lpparam.classLoader);
         XposedBridge.hookAllConstructors(httpUrlConnection, new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
@@ -52,17 +49,77 @@ public class XposedHook implements IXposedHookLoadPackage {
                     return;
                 }
 
-                param.args[0] = rewriteUrlToRunscopeUrl((URL)param.args[0], slug);
+                URL newUrl = rewriteUrlToRunscopeUrl((URL)param.args[0], slug, "HttpURLConnection");
+                if (newUrl != null) {
+                    param.args[0] = newUrl;
+                }
             }
         });
+
+        final Class<?> httpRequestBase = findClass("org.apache.http.client.methods.HttpRequestBase", lpparam.classLoader);
+        findAndHookMethod(httpRequestBase, "setURI", URI.class, new XC_MethodHook() {
+            @Override
+            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                String slug = currentRunscopeSlug != null ? currentRunscopeSlug : "fnd4w6iq3qz1";
+                if (slug == null) {
+                    return;
+                }
+
+                URI newUri = rewriteUriToRunscopeUri((URI) param.args[0], slug, "OkHttpClient open");
+                if (newUri != null)  {
+                    param.args[0] = newUri;
+                }
+            }
+        });
+
+        // NB: Unlike the above hooks, not every app will have OkHttp available
+        try {
+            final Class<?> okHttpClient = findClass("com.squareup.okhttp.OkHttpClient", lpparam.classLoader);
+
+            findAndHookMethod(okHttpClient, "open", URI.class, new XC_MethodHook() {
+                @Override
+                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                    String slug = currentRunscopeSlug != null ? currentRunscopeSlug : "fnd4w6iq3qz1";
+                    if (slug == null) {
+                        return;
+                    }
+
+                    URI newUri = rewriteUriToRunscopeUri((URI) param.args[0], slug, "OkHttpClient open");
+                    if (newUri != null)  {
+                        param.args[0] = newUri;
+                    }
+                }
+            });
+        } catch (XposedHelpers.ClassNotFoundError _) {
+        } catch (NoSuchMethodError _){
+        }
     }
 
-    private URL rewriteUrlToRunscopeUrl(URL sourceUrl, String runscopeSlug) throws MalformedURLException {
+    private URL rewriteUrlToRunscopeUrl(URL sourceUrl, String runscopeSlug, String methodHint) throws MalformedURLException {
         String host = sourceUrl.getHost();
         String newHost = host.replaceAll("-", "--").replaceAll("\\.", "-") + String.format("-%s.runscope.net", runscopeSlug);
         String newUrl = sourceUrl.toString().replace(host, newHost);
 
-        XposedBridge.log(String.format("About to rewrite '%s' => '%s'", sourceUrl.toString(), newUrl));
+        // NB: For some reason some apps like to setURI on the result of getURI. :-/
+        if (host.contains("runscope.net")) {
+            return null;
+        }
+
+        XposedBridge.log(String.format("About to rewrite '%s' => '%s (%s)'", sourceUrl.toString(), newUrl, methodHint));
         return new URL(newUrl);
+    }
+      
+    private URI rewriteUriToRunscopeUri(URI sourceUrl, String runscopeSlug, String methodHint) throws URISyntaxException {
+        String host = sourceUrl.getHost();
+        String newHost = host.replaceAll("-", "--").replaceAll("\\.", "-") + String.format("-%s.runscope.net", runscopeSlug);
+        String newUrl = sourceUrl.toString().replace(host, newHost);
+
+        // NB: For some reason some apps like to setURI on the result of getURI. :-/
+        if (host.contains("runscope.net")) {
+            return null;
+        }
+
+        XposedBridge.log(String.format("About to rewrite '%s' => '%s (%s)'", sourceUrl.toString(), newUrl, methodHint));
+        return new URI(newUrl);
     }
 }
