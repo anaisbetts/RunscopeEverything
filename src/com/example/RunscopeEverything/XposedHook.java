@@ -93,6 +93,27 @@ public class XposedHook implements IXposedHookLoadPackage {
         } catch (XposedHelpers.ClassNotFoundError _) {
         } catch (NoSuchMethodError _){
         }
+
+        // https://code.google.com/p/httpclientandroidlib, used in Instagram
+        try {
+            final Class<?> boyeHttpRequestBase = findClass("ch.boye.httpclientandroidlib.client.methods.HttpRequestBase", lpparam.classLoader);
+            findAndHookMethod(boyeHttpRequestBase, "setURI", URI.class, new XC_MethodHook() {
+                @Override
+                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                    String slug = currentRunscopeSlug != null ? currentRunscopeSlug : "fnd4w6iq3qz1";
+                    if (slug == null) {
+                        return;
+                    }
+
+                    URI newUri = rewriteUriToRunscopeUri((URI) param.args[0], slug, "boye.ch HttpClient");
+                    if (newUri != null)  {
+                        param.args[0] = newUri;
+                    }
+                }
+            });
+        } catch (XposedHelpers.ClassNotFoundError _) {
+        } catch (NoSuchMethodError _){
+        }
     }
 
     private URL rewriteUrlToRunscopeUrl(URL sourceUrl, String runscopeSlug, String methodHint) throws MalformedURLException {
