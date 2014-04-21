@@ -41,9 +41,6 @@ public class SettingsActivity extends Activity {
             }
         });
 
-        // NB: Can't believe I have to do this
-        final Activity that = this;
-
         saveButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -54,7 +51,7 @@ public class SettingsActivity extends Activity {
                 editor.putString("token", tokenValue);
                 editor.commit();
 
-                Toast t = Toast.makeText(that, tokenValue != null && tokenValue.length() > 0 ?
+                Toast t = Toast.makeText(SettingsActivity.this, tokenValue != null && tokenValue.length() > 0 ?
                     "Runscope Bucket ID has been set. Restart any already running apps to apply the new bucket." :
                     "Disabling Runscope for new apps. Already running apps will continue tracking",
                     5);
