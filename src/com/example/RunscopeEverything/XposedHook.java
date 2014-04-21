@@ -33,7 +33,7 @@ public class XposedHook implements IXposedHookLoadPackage {
         currentRunscopeSlug = sharedPrefs.getString("token", null);
 
         // NB: No Runscope slug set? Bail.
-        if (currentRunscopeSlug == null) {
+        if (currentRunscopeSlug == null || currentRunscopeSlug.length() == 0) {
             XposedBridge.log("No Runscope slug set, leaving!");
         }
 

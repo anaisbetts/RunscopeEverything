@@ -37,7 +37,7 @@ public class SettingsActivity extends Activity {
 
             @Override
             public void afterTextChanged(Editable editable) {
-                saveButton.setEnabled(editable.length() > 0);
+                saveButton.setText(editable.length() > 0 ? "Save" : "Disable Runscope");
             }
         });
 
@@ -49,10 +49,15 @@ public class SettingsActivity extends Activity {
             public void onClick(View view) {
                 SharedPreferences prefs = getSharedPreferences("runscope", Context.MODE_WORLD_READABLE);
                 SharedPreferences.Editor editor = prefs.edit();
-                editor.putString("token", text.getText().toString());
+
+                String tokenValue = text.getText().toString();
+                editor.putString("token", tokenValue);
                 editor.commit();
 
-                Toast t = Toast.makeText(that, "Runscope Bucket ID has been set. Restart any already running apps to apply the new bucket.", 5);
+                Toast t = Toast.makeText(that, tokenValue != null && tokenValue.length() > 0 ?
+                    "Runscope Bucket ID has been set. Restart any already running apps to apply the new bucket." :
+                    "Disabling Runscope for new apps. Already running apps will continue tracking",
+                    5);
                 t.show();
             }
         });
