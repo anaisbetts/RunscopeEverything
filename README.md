@@ -1,9 +1,11 @@
 ### RunscopeEverything
 
 This is an [Xposed Module](http://repo.xposed.info/) that rewrites all HTTP
-requests to point towards a Runscope bucket:
+requests to point towards a [Runscope](http://runscope.com) bucket:
 
 <img src="https://s3.amazonaws.com/pushbullet-uploads/ujv6ZOvSLKe-SO3Y0wOkHbO53fLqyoNRZ36XT3gWOXyI/Screenshot_2014-04-20-21-23-06.png" width=360 />
+
+![](http://cl.ly/image/033Q1T043U09/content#png)
 
 Put in the Bucket ID (you can find it from the URL, or from the "URL Helper
 section", an example is 'fnd4w6iq3qf2') and hit Save. All newly started
