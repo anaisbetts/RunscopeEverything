@@ -25,8 +25,6 @@ public class XposedHook implements IXposedHookLoadPackage {
 
     @Override
     public void handleLoadPackage(LoadPackageParam lpparam) throws Throwable {
-        final Class<?> activity = findClass("android.app.Activity", lpparam.classLoader);
-
         XposedBridge.log("Initializing Runscope hook");
 
         XSharedPreferences sharedPrefs = new XSharedPreferences("org.paulbetts.RunscopeEverything", "runscope");
@@ -35,6 +33,7 @@ public class XposedHook implements IXposedHookLoadPackage {
         // NB: No Runscope slug set? Bail.
         if (currentRunscopeSlug == null || currentRunscopeSlug.length() == 0) {
             XposedBridge.log("No Runscope slug set, leaving!");
+            return;
         }
 
         final Class<?> httpUrlConnection = findClass("java.net.HttpURLConnection", lpparam.classLoader);
