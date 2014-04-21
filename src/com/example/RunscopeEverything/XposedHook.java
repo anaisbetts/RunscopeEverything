@@ -4,9 +4,13 @@ import static de.robv.android.xposed.XposedHelpers.findAndHookMethod;
 import static de.robv.android.xposed.XposedHelpers.findClass;
 
 import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.app.Application;
+import android.os.Handler;
+import android.os.Looper;
 import de.robv.android.xposed.*;
 
 import java.net.*;
@@ -14,6 +18,7 @@ import java.net.*;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
+import de.robv.android.xposed.XSharedPreferences;
 
 public class XposedHook implements IXposedHookLoadPackage {
     String currentRunscopeSlug = null;
@@ -23,28 +28,20 @@ public class XposedHook implements IXposedHookLoadPackage {
         final Class<?> activity = findClass("android.app.Activity", lpparam.classLoader);
 
         XposedBridge.log("Initializing Runscope hook");
-        /*
-        findAndHookMethod(activity, "onCreate", Bundle.class, new XC_MethodHook() {
-            @Override
-            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                Activity thisActivity = (Activity)param.thisObject;
 
-                try {
-                    Context ctx = thisActivity.createPackageContext("com.example.RunscopeEverything", 0);
-                    SharedPreferences prefs = ctx.getSharedPreferences("runscopeEverything", Context.MODE_PRIVATE);
-                    currentRunscopeSlug = prefs.getString("token", null);
-                } catch (Throwable e) {
-                    XposedBridge.log("Couldn't get Runscope token");
-                }
-            }
-        });
-        */
+        XSharedPreferences sharedPrefs = new XSharedPreferences("com.example.RunscopeEverything", "runscope");
+        currentRunscopeSlug = sharedPrefs.getString("token", null);
+
+        // NB: No Runscope slug set? Bail.
+        if (currentRunscopeSlug == null) {
+            XposedBridge.log("No Runscope slug set, leaving!");
+        }
 
         final Class<?> httpUrlConnection = findClass("java.net.HttpURLConnection", lpparam.classLoader);
         XposedBridge.hookAllConstructors(httpUrlConnection, new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                String slug = currentRunscopeSlug != null ? currentRunscopeSlug : "fnd4w6iq3qz1";
+                String slug = currentRunscopeSlug;
                 if (param.args.length != 1 || param.args[0].getClass() != URL.class || slug == null) {
                     return;
                 }
@@ -60,7 +57,7 @@ public class XposedHook implements IXposedHookLoadPackage {
         findAndHookMethod(httpRequestBase, "setURI", URI.class, new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                String slug = currentRunscopeSlug != null ? currentRunscopeSlug : "fnd4w6iq3qz1";
+                String slug = currentRunscopeSlug;
                 if (slug == null) {
                     return;
                 }
@@ -79,7 +76,7 @@ public class XposedHook implements IXposedHookLoadPackage {
             findAndHookMethod(okHttpClient, "open", URI.class, new XC_MethodHook() {
                 @Override
                 protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                    String slug = currentRunscopeSlug != null ? currentRunscopeSlug : "fnd4w6iq3qz1";
+                    String slug = currentRunscopeSlug;
                     if (slug == null) {
                         return;
                     }
@@ -100,7 +97,7 @@ public class XposedHook implements IXposedHookLoadPackage {
             findAndHookMethod(boyeHttpRequestBase, "setURI", URI.class, new XC_MethodHook() {
                 @Override
                 protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                    String slug = currentRunscopeSlug != null ? currentRunscopeSlug : "fnd4w6iq3qz1";
+                    String slug = currentRunscopeSlug;
                     if (slug == null) {
                         return;
                     }
