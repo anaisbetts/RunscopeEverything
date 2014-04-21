@@ -1,4 +1,4 @@
-package com.example.RunscopeEverything;
+package org.paulbetts.RunscopeEverything;
 
 import static de.robv.android.xposed.XposedHelpers.findAndHookMethod;
 import static de.robv.android.xposed.XposedHelpers.findClass;
@@ -29,7 +29,7 @@ public class XposedHook implements IXposedHookLoadPackage {
 
         XposedBridge.log("Initializing Runscope hook");
 
-        XSharedPreferences sharedPrefs = new XSharedPreferences("com.example.RunscopeEverything", "runscope");
+        XSharedPreferences sharedPrefs = new XSharedPreferences("org.paulbetts.RunscopeEverything", "runscope");
         currentRunscopeSlug = sharedPrefs.getString("token", null);
 
         // NB: No Runscope slug set? Bail.

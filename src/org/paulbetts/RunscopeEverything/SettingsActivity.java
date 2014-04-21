@@ -1,4 +1,4 @@
-package com.example.RunscopeEverything;
+package org.paulbetts.RunscopeEverything;
 
 import android.app.Activity;
 import android.content.Context;
