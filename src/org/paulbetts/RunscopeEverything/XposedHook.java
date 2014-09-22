@@ -68,7 +68,7 @@ public class XposedHook implements IXposedHookLoadPackage {
             }
         });
 
-        // NB: Unlike the above hooks, not every app will have OkHttp available
+        // NB: Unlike the above hooks, not every app will have OkHttp 1.x available
         try {
             final Class<?> okHttpClient = findClass("com.squareup.okhttp.OkHttpClient", lpparam.classLoader);
 
@@ -83,6 +83,29 @@ public class XposedHook implements IXposedHookLoadPackage {
                     URI newUri = rewriteUriToRunscopeUri((URI) param.args[0], slug, "OkHttpClient open");
                     if (newUri != null)  {
                         param.args[0] = newUri;
+                    }
+                }
+            });
+        } catch (XposedHelpers.ClassNotFoundError _) {
+        } catch (NoSuchMethodError _){
+        }
+
+	// NB: Same deal, but for OkHttp 2.x's async API
+        try {
+            final Class<?> okHttpClient = findClass("com.squareup.okhttp.Request.Builder", lpparam.classLoader);
+
+            findAndHookMethod(okHttpClient, "url", String.class, new XC_MethodHook() {
+                @Override
+                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                    String slug = currentRunscopeSlug;
+                    if (slug == null) {
+                        return;
+                    }
+
+		    URI oldUri = new URI((String)param.args[0]);
+                    URI newUri = rewriteUriToRunscopeUri(oldUri, slug, "OkHttp 2.0 Async");
+                    if (newUri != null)  {
+                        param.args[0] = newUri.toString();
                     }
                 }
             });
